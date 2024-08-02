@@ -7,7 +7,8 @@ index_img: /img/promethus_index.png
 show_category: true # 表示强制开启
 comment: 'valine'
 categories:
-  - DevOps
+  - 运维系列
+  - 一. 疯狂监控
 ---
 
 通过`Promethus`监控`kubernetes`集群资源信息，`PromQL`、`alertmanager`、`grafana`基本使用等

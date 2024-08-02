@@ -7,7 +7,8 @@ index_img: /img/promethus_index.png
 show_category: true # 表示强制开启
 comment: 'valine'
 categories:
-  - DevOps
+  - 运维系列
+  - 一. 疯狂监控
 ---
 
 本文主要介绍`Prometheus`监控平台的部署搭建与使用，并在本地搭建`Prometheus`平台与各种`exporter`。

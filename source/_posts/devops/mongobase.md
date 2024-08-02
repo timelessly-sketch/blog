@@ -7,7 +7,8 @@ index_img: /img/mongodb_index.png
 show_category: true # 表示强制开启
 comment: 'valine'
 categories:
-  - DevOps
+  - 运维系列
+  - 二. 日常数据
 ---
 
 > mongodb是一种存储文档的非关系数据库
