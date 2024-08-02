@@ -6,6 +6,7 @@ tags: gorm
 banner_img: /img/index.png
 index_img: /img/gorm.png
 show_category: true # 表示强制开启
+comment: 'valine'
 categories:
   - Go系列
   - 二. 数据库操作 

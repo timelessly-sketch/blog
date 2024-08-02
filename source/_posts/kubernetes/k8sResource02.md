@@ -5,6 +5,7 @@ tags: [Kubernetes, DevOps]
 banner_img: /img/index.png
 index_img: /img/kubernetes01.png
 show_category: true # 表示强制开启
+comment: 'valine'
 categories:
   - Kubernets系列
 ---

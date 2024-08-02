@@ -5,6 +5,7 @@ tags: golang
 banner_img: /img/index.png
 index_img: /img/golang/golang03_index.png
 show_category: true # 表示强制开启
+comment: 'valine'
 categories:
   - Go系列
   - 一. 基础技能

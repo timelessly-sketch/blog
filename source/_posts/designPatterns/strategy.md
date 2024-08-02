@@ -5,6 +5,7 @@ tags: golang
 banner_img: /img/index.png
 index_img: /img/golang/strategy.png
 show_category: true # 表示强制开启
+comment: 'valine'
 categories:
   - Go系列
   - 三. 设计模式
