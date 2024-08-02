@@ -42,7 +42,7 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       hexo-theme-fluid:
-        specifier: ^1.9.4
+        specifier: ^1.9.8
         version: 1.9.8(nunjucks@3.2.4(chokidar@3.6.0))
       hexo-theme-landscape:
         specifier: ^0.0.3
