@@ -1,5 +1,5 @@
 ---
-title: MongoDB操作指南(一)
+title: MongoDB操作(一)
 date: 2023-02-25 11:36:50
 tags: [MongoDB, DevOps]
 banner_img: /img/index.png

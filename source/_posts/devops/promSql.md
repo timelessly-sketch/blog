@@ -1,5 +1,5 @@
 ---
-title: Promethus监控系统(二)
+title: Promethus监控(二)
 date: 2023-02-19 15:16:27
 tags: [Promethus, DevOps]
 banner_img: /img/index.png
