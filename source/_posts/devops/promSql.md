@@ -5,6 +5,7 @@ tags: [Promethus, DevOps]
 banner_img: /img/index.png
 index_img: /img/promethus_index.png
 show_category: true # 表示强制开启
+comment: 'valine'
 categories:
   - DevOps
 ---

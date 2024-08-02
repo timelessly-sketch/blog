@@ -328,7 +328,7 @@ navbar:
     - { key: "kubernetes系列", link: "/2023/02/19/kubernetes/k8s/index.html", icon: "iconfont icon-docker" }
   #  - { key: "archive", link: "/archives/", icon: "iconfont icon-archive-fill" }
   #  - { key: "category", link: "/categories/", icon: "iconfont icon-category-fill" }
-    - { key: "DevOps系列", link: "/2023/02/19/kubernetes/k8s/index.html", icon: "iconfont iconfont icon-briefcase" }
+    - { key: "DevOps系列", link: "/2023/02/19/devops/promethus/index.html", icon: "iconfont iconfont icon-briefcase" }
     - { key: "tag", link: "/tags/", icon: "iconfont icon-tags-fill" }
     - { key: "about", link: "/about/", icon: "iconfont icon-user-fill" }
     #- { key: "links", link: "/links/", icon: "iconfont icon-link-fill" }
@@ -660,11 +660,11 @@ post:
   # 评论插件
   # Comment plugin
   comments:
-    enable: false
+    enable: true
     # 指定的插件，需要同时设置对应插件的必要参数
     # The specified plugin needs to set the necessary parameters at the same time
     # Options: utterances | disqus | gitalk | valine | waline | changyan | livere | remark42 | twikoo | cusdis
-    type: disqus
+    type: Valine
   
   # 分类，是否展示左侧分类目录
   # categories
@@ -731,8 +731,8 @@ gitalk:
 # Based on LeanCloud
 # See: https://valine.js.org/
 valine:
-  appId:
-  appKey:
+  appId: nriX4Vai9Dht4h3hNIhpoWR4-gzGzoHsz
+  appKey: ktmzz0v2LJkmz0lajN7P1zwC
   path: window.location.pathname
   placeholder:
   avatar: 'retro'
