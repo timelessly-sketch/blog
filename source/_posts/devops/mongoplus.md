@@ -258,11 +258,17 @@ planSummary 执行计划
 writeConflicts 写冲突次数 写是要加写锁的，如果写冲突次数很多，比如多个操作同时更新同一个文档，可能会导致该操作耗时较长，主要就消耗在写冲突这里了。
 ```
 
+## 3 导数操作
+
+```bash
+mongoexport --url "mongodb://用户:密码@IP:端口/参数" --collection 集合 --out xx.json # 此处是db的链接信息
+```
 
 
 
 
-## 3 操作记录
+
+##  4 操作记录
 
 ```javascript
 db.currentOp() == db.$cmd.sys.inprog.findOne() # 更细一点就db.curretnOp(true)
@@ -276,3 +282,11 @@ db.currentOp().inprog.forEach(function(item){if (item.secs_running > 1 ) print(i
 mongo 连接信息 --eval "db.currentOp().inprog.forEach(function(item){printjson(item)});"
 ```
 
+```bash
+# 创建索引
+2023-08-07T12:34:56.789-0700 I COMMAND  [conn123] createIndex db.collection name: "indexName" keys: { "fieldName": 1 } ns: "db.collection" nscanned:0 nscannedObjects:0 keyUpdates:0 locks(micros) r:33780 nreturned:0 reslen:68 0ms
+```
+
+## 5 多看文档
+
+- [MongoDB中文手册](https://docs.mongoing.com)
