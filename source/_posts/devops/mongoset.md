@@ -1,5 +1,5 @@
 ---
-title: MongoDB副本集
+title: MongoDB副本集群
 date: 2024-08-07 11:15:50
 tags: [MongoDB, DevOps]
 banner_img: /img/index.png
@@ -70,7 +70,7 @@ categories:
 
 ```bash
 rs.add( { host: "192.168.56.197:27017", priority: 0, votes: 0 } ) # 建议将优先级与投票权设置为0
-STARTUP -> STARTUP2 -> SECONDARY
+新节点在没有认证之前是other状态，在认证后是startup2
 ```
 
 

@@ -258,24 +258,250 @@ planSummary 执行计划
 writeConflicts 写冲突次数 写是要加写锁的，如果写冲突次数很多，比如多个操作同时更新同一个文档，可能会导致该操作耗时较长，主要就消耗在写冲突这里了。
 ```
 
-## 3 导数操作
+### 2.4 Profile优化器
+
+**常用的慢查询优化器分析语句**
+
+```bash
+#返回最近的10条记录
+db.system.profile.find().limit(10).sort({ ts : -1 }).pretty()
+
+#返回所有的操作，除command类型的
+db.system.profile.find( { op: { $ne : 'command' } } ).pretty()
+
+#返回特定集合
+db.system.profile.find( { ns : 'mydb.test' } ).pretty()
+
+#返回大于5毫秒慢的操作
+db.system.profile.find( { millis : { $gt : 5 } } ).pretty()
+
+#从一个特定的时间范围内返回信息
+db.system.profile.find(
+                       {
+                        ts : {
+                              $gt : new ISODate("2012-12-09T03:00:00Z") ,
+                              $lt : new ISODate("2012-12-09T03:40:00Z")
+                             }
+                       }
+                      ).pretty()
+
+#特定时间，限制用户，按照消耗时间排序
+db.system.profile.find(
+                       {
+                         ts : {
+                               $gt : new ISODate("2011-07-12T03:00:00Z") ,
+                               $lt : new ISODate("2011-07-12T03:40:00Z")
+                              }
+                       },
+                       { user : 0 }
+                      ).sort( { millis : -1 } )
+```
+
+## 3 语句分析工具
+
+MongoDB 3.0之后，现实开发中，常用的是executionStats模式，主要分析这种模式。
+
+### 3.1 基本用法
+
+explain()也接收不同的参数，通过设置不同参数我们可以查看更详细的查询计划。
+
+- **queryPlanner：**queryPlanner是默认参数，添加queryPlanner参数的查询结果就是我们上面表格中看到的查询结果。
+- **executionStats**：executionStats会返回最佳执行计划的一些统计信息。
+- **allPlansExecution**:allPlansExecution用来获取所有执行计划，结果参数基本与上文相同。
+
+### 3.2 queryPlanner
+
+```bash
+> db.duan.find({x:1}).explain()
+{
+    "queryPlanner" : {
+        "plannerVersion" : 1,
+        "namespace" : "member_data.duan",
+        "indexFilterSet" : false,
+        "parsedQuery" : {
+            "x" : {
+                "$eq" : 1
+            }
+        },
+        "winningPlan" : {
+            "stage" : "COLLSCAN",
+            "filter" : {
+                "x" : {
+                    "$eq" : 1
+                }
+            },
+            "direction" : "forward"
+        },
+        "rejectedPlans" : [ ]
+    },
+    "serverInfo" : {
+        "host" : "localhost.localdomain",
+        "port" : 27017,
+        "version" : "4.0.6",
+        "gitVersion" : "caa42a1f75a56c7643d0b68d3880444375ec42e3"
+    },
+    "ok" : 1
+}
+```
+
+返回结果包含两大块信息，一个是queryPlanner，即查询计划，还有一个是serverInfo，即MongoDB服务的一些信息。那么这里涉及到的参数比较多，**queryPlanner**结果参数说明如下：
+
+| 参数                           | 含义                                                         |
+| ------------------------------ | ------------------------------------------------------------ |
+| plannerVersion                 | 查询计划版本                                                 |
+| namespace                      | 要查询的集合（该值返回的是该query所查询的表）                |
+| indexFilterSet                 | 是否使用索引(针对该query是否有indexfilter)                   |
+| parsedQuery                    | 查询条件，此处为x=1                                          |
+| winningPlan                    | 最佳执行计划                                                 |
+| winningPlan.stage              | 最优执行计划的stage(查询方式)，常见的有：COLLSCAN/全表扫描：（应该知道就是CollectionScan，就是所谓的“集合扫描”，和mysql中table scan/heap scan类似，这个就是所谓的性能最烂最无奈的由来）、IXSCAN/索引扫描：（而是IndexScan，这就说明我们已经命中索引了）、FETCH/根据索引去检索文档、SHARD_MERGE/合并分片结果、IDHACK/针对_id进行查询 |
+| winningPlan.inputStage         | 用来描述子stage，并且为其父stage提供文档和索引关键字。       |
+| winningPlan.stage的child stage | 此处是IXSCAN，表示进行的是index scanning。                   |
+| winningPlan.keyPattern         | 所扫描的index内容，此处是did:1,status:1,modify_time: -1与scid : 1 |
+| winningPlan.indexName          | winning plan所选用的index。                                  |
+| winningPlan.isMultiKey         | 是否是Multikey，此处返回是false，如果索引建立在array上，此处将是true。 |
+| winningPlan.direction          | 此query的查询顺序，此处是forward，如果用了.sort({modify_time:-1})将显示backward。 |
+| filter                         | 过滤条件                                                     |
+| winningPlan.indexBounds        | winningplan所扫描的索引范围,如果没有制定范围就是[MaxKey, MinKey]，这主要是直接定位到mongodb的chunck中去查找数据，加快数据读取。 |
+| rejectedPlans                  | 拒绝的执行计划（其他执行计划（非最优而被查询优化器reject的）的详细返回，其中具体信息与winningPlan的返回中意义相同，故不在此赘述） |
+| serverInfo                     | MongoDB服务器信息                                            |
+
+### 3.3 **executionStats**
+
+```bash
+> db.duan.find({x:1}).explain("executionStats")
+{
+    "queryPlanner" : {
+        "plannerVersion" : 1,
+        "namespace" : "member_data.duan",
+        "indexFilterSet" : false,
+        "parsedQuery" : {
+            "x" : {
+                "$eq" : 1
+            }
+        },
+        "winningPlan" : {
+            "stage" : "COLLSCAN",
+            "filter" : {
+                "x" : {
+                    "$eq" : 1
+                }
+            },
+            "direction" : "forward"
+        },
+        "rejectedPlans" : [ ]
+    },
+    "executionStats" : {
+        "executionSuccess" : true,
+        "nReturned" : 0,
+        "executionTimeMillis" : 0,
+        "totalKeysExamined" : 0,
+        "totalDocsExamined" : 3,
+        "executionStages" : {
+            "stage" : "COLLSCAN",
+            "filter" : {
+                "x" : {
+                    "$eq" : 1
+                }
+            },
+            "nReturned" : 0,
+            "executionTimeMillisEstimate" : 0,
+            "works" : 5,
+            "advanced" : 0,
+            "needTime" : 4,
+            "needYield" : 0,
+            "saveState" : 0,
+            "restoreState" : 0,
+            "isEOF" : 1,
+            "invalidates" : 0,
+            "direction" : "forward",
+            "docsExamined" : 3
+        }
+    },
+    "serverInfo" : {
+        "host" : "localhost.localdomain",
+        "port" : 27017,
+        "version" : "4.0.6",
+        "gitVersion" : "caa42a1f75a56c7643d0b68d3880444375ec42e3"
+    },
+    "ok" : 1
+}
+```
+
+这里除了我们上文介绍到的一些参数之外，还多了executionStats参数，含义如下：
+
+| 参数                        | 含义                                                         |
+| --------------------------- | ------------------------------------------------------------ |
+| executionSuccess            | 是否执行成功                                                 |
+| nReturned                   | 返回的结果数                                                 |
+| executionTimeMillis         | 执行耗时                                                     |
+| totalKeysExamined           | 索引扫描次数                                                 |
+| totalDocsExamined           | 文档扫描次数                                                 |
+| executionStages             | 这个分类下描述执行的状态                                     |
+| stage                       | 扫描方式，具体可选值与上文的相同                             |
+| nReturned                   | 查询结果数量                                                 |
+| executionTimeMillisEstimate | 预估耗时                                                     |
+| works                       | 工作单元数，一个查询会分解成小的工作单元                     |
+| advanced                    | 优先返回的结果数                                             |
+| docsExamined                | 文档检查数目，与totalDocsExamined一致。检查了总共的个documents，而从返回上面的nReturne数量 |
+
+- **第一层，executionTimeMillis**
+
+最为直观explain返回值是executionTimeMillis值，指的是我们这条语句的执行时间，这个值当然是希望越少越好。
+
+```
+其中有3个executionTimeMillis，分别是：
+	executionStats.executionTimeMillis 该query的整体查询时间。
+	executionStats.executionStages.executionTimeMillisEstimate 该查询根据index去检索document获得2001条数据的时间。
+	executionStats.executionStages.inputStage.executionTimeMillisEstimate 该查询扫描2001行index所用时间。
+```
+
+- **第二层，index与document扫描数与查询返回条目数**
+
+​	这个主要讨论3个返回项，nReturned、totalKeysExamined、totalDocsExamined，分别代表该条查询返回的条目、索引扫描条目、文档扫描条目。这些都是直观地影响到executionTimeMillis，我们需要扫描的越少速度越快。
+
+​	对于一个查询，我们最理想的状态是：nReturned=totalKeysExamined=totalDocsExamined
+
+- **第三层，stage状态分析**
+
+``` bash
+那么又是什么影响到了totalKeysExamined和totalDocsExamined？是stage的类型。类型列举如下：
+  COLLSCAN：全表扫描
+  IXSCAN：索引扫描
+  FETCH：根据索引去检索指定document
+  SHARD_MERGE：将各个分片返回数据进行merge
+  SORT：表明在内存中进行了排序
+  LIMIT：使用limit限制返回数
+  SKIP：使用skip进行跳过
+  IDHACK：针对_id进行查询
+  SHARDING_FILTER：通过mongos对分片数据进行查询
+  COUNT：利用db.coll.explain().count()之类进行count运算
+  COUNTSCAN：count不使用Index进行count时的stage返回
+  COUNT_SCAN：count使用了Index进行count时的stage返回
+  SUBPLA：未使用到索引的$or查询的stage返回
+  TEXT：使用全文索引进行查询时候的stage返回
+  PROJECTION：限定返回字段时候stage的返回
+```
+
+  **不希望看到包含如下的stage：**
+
+  	COLLSCAN(全表扫描),SORT(使用sort但是无index),不合理的SKIP,SUBPLA(未用到index的$or),COUNTSCAN(不使用index进行count)
+
+## 4 导数操作
 
 ```bash
 mongoexport --url "mongodb://用户:密码@IP:端口/参数" --collection 集合 --out xx.json # 此处是db的链接信息
 ```
 
+##  5 操作记录
 
-
-
-
-##  4 操作记录
-
-```javascript
+```bash
 db.currentOp() == db.$cmd.sys.inprog.findOne() # 更细一点就db.curretnOp(true)
 db.serverStatus().connections # 查看当前链接数
 
 db.currentOp().inprog.forEach(function(item){printjson(item)}); # 已json的格式打印 这里的item就是上面返回信息里面的
 db.currentOp().inprog.forEach(function(item){if (item.secs_running > 1 ) print(itme.opid);db.killOp(item.opid)}) # 打印运行时间大于1s的进程的ID并且杀掉他
+
+db.system.profile.find().pretty(); # pretty打印json格式
 ```
 
 ```bash
